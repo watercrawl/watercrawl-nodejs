@@ -1,5 +1,5 @@
 {
-  "name": "watercrawl-nodejs",
+  "name": "@watercrawl/nodejs",
   "version": "1.0.0",
   "description": "Node.js client for WaterCrawl crawler",
   "main": "dist/index.js",

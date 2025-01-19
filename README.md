@@ -3,7 +3,7 @@
 A TypeScript/Node.js client library for the WaterCrawl API. This client provides a simple and intuitive way to interact with WaterCrawl's web crawling service.
 
 [![Test](https://github.com/watercrawl/watercrawl-nodejs/actions/workflows/test.yml/badge.svg)](https://github.com/watercrawl/watercrawl-nodejs/actions/workflows/test.yml)
-[![npm version](https://badge.fury.io/js/watercrawl-nodejs.svg)](https://badge.fury.io/js/watercrawl-nodejs)
+[![npm version](https://badge.fury.io/js/@watercrawl%2Fnodejs.svg)](https://badge.fury.io/js/@watercrawl%2Fnodejs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -23,13 +23,13 @@ A TypeScript/Node.js client library for the WaterCrawl API. This client provides
 ## Installation
 
 ```bash
-npm install watercrawl-nodejs
+npm install @watercrawl/nodejs
 ```
 
 ## Quick Start
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
 
 // Initialize the client with your API key
 const client = new WaterCrawlAPIClient('your-api-key');
@@ -166,8 +166,8 @@ async scrapeUrl(
 ### Basic Crawling
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
-import type { CrawlResult } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
+import type { CrawlResult } from '@watercrawl/nodejs';
 
 const client = new WaterCrawlAPIClient('your-api-key');
 
@@ -179,8 +179,8 @@ console.log('Crawl result:', result);
 ### Advanced Crawling with Options
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
-import type { PageOptions, PluginOptions } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
+import type { PageOptions, PluginOptions } from '@watercrawl/nodejs';
 
 const client = new WaterCrawlAPIClient('your-api-key');
 
@@ -212,8 +212,8 @@ const result = await client.scrapeUrl('https://watercrawl.dev', pageOptions, plu
 ### Asynchronous Crawling with Progress Monitoring
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
-import type { CrawlEvent } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
+import type { CrawlEvent } from '@watercrawl/nodejs';
 
 const client = new WaterCrawlAPIClient('your-api-key');
 
@@ -239,8 +239,8 @@ for await (const event of client.monitorCrawlRequest(request.uuid)) {
 ### Managing Multiple Crawls
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
-import type { CrawlRequest, CrawlResult } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
+import type { CrawlRequest, CrawlResult } from '@watercrawl/nodejs';
 
 const client = new WaterCrawlAPIClient('your-api-key');
 
@@ -265,8 +265,8 @@ console.log('Results:', results);
 The client includes comprehensive error handling with TypeScript support:
 
 ```typescript
-import { WaterCrawlAPIClient } from 'watercrawl-nodejs';
-import type { APIError } from 'watercrawl-nodejs';
+import { WaterCrawlAPIClient } from '@watercrawl/nodejs';
+import type { APIError } from '@watercrawl/nodejs';
 
 try {
     const result = await client.scrapeUrl('https://watercrawl.dev');
