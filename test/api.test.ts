@@ -59,7 +59,7 @@ describe('WaterCrawlAPI', () => {
         const result = await api.getCrawlRequestsList();
         const response = await api.getCrawlRequestResults(result.results[result.results.length - 1].uuid);
         expect(Array.isArray(response.results)).toBe(true);
-    });
+    }, 60000);
 
     test('downloadResult downloads a specific result', async () => {
         const resultCrawl = await api.getCrawlRequestsList();
