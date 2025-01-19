@@ -1,0 +1,32 @@
+# Source
+src/
+
+# Tests
+test/
+coverage/
+*.test.ts
+*.test.js
+
+# Config files
+.github/
+.gitignore
+.eslintrc*
+.prettierrc
+tsconfig.json
+jest.config.js
+
+# Environment
+.env
+.env.example
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+.DS_Store
+*.tgz
