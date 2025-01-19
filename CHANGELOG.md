@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing with version tags
 - Examples for basic usage
 - Complete documentation in README.md
+- MIT License file
 
 ### Dependencies
 - axios ^1.6.5
