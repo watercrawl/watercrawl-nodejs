@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosProgressEvent, AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import urlJoin from 'url-join';
 
 export class BaseAPIClient {
