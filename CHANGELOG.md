@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Sitemap API support with download functionality
 - Sitemap visualization endpoints (graph and markdown formats)
-- Tests for new sitemap API features
+- Search functionality with query, monitoring, and result handling
+- Tests for new sitemap and search API features
 
 ### Changed
 - Simplified documentation with clearer examples
