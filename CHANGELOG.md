@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-05-03
+
+### Fixed
+- Improved async streaming implementation for more reliable event handling
+- Fixed search event monitoring to correctly process event status
+- Refactored stream processing for better error handling and resource management
+- Removed debug console.log statements from tests
+
 ## [1.1.0] - 2025-04-30
 
 ### Added
