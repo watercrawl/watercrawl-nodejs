@@ -49,7 +49,6 @@ describe('WaterCrawlAPI', () => {
 
         let count = 0;
         for await (const item of generator) {
-            console.log("TEST", item);
             expect(typeof item).toBe('object');
             count++;
             if (count >= 2) break; // Only test first few events to keep test duration reasonable

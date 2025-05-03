@@ -53,56 +53,11 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
     }
 
     async *monitorCrawlRequest(itemId: string, download: boolean = true): AsyncGenerator<CrawlEvent, void, unknown> {
-        const events: CrawlEvent[] = [];
-        let resolveNext: ((value: IteratorResult<CrawlEvent, void>) => void) | null = null;
-        let isDone = false;
-        let streamError: Error | null = null;
 
-        const processEvent = (event: CrawlEvent) => {
-            if (resolveNext) {
-                resolveNext({ value: event, done: false });
-                resolveNext = null;
-            } else {
-                events.push(event);
-            }
-        };
-
-        const streamPromise = this.streamEvents(
+        yield* this.fetchStream<CrawlEvent>(
             `/api/v1/core/crawl-requests/${itemId}/status/`,
-            processEvent,
             { params: { prefetched: download } }
-        ).catch((error) => {
-            streamError = error;
-            isDone = true;
-        }).finally(() => {
-            isDone = true;
-        });
-    
-
-        try {
-            while (!isDone || events.length > 0) {
-                if (events.length > 0) {
-                    yield events.shift()!;
-                } else if (!isDone) {
-                    await new Promise<IteratorResult<CrawlEvent, void>>((resolve) => {
-                        resolveNext = resolve;
-                    });
-                }
-            }
-    
-            // Check for any remaining events after the stream ends
-            while (events.length > 0) {
-                yield events.shift()!;
-            }
-    
-            // If the stream failed, propagate the error
-            if (streamError) {
-                throw streamError;
-            }
-        } finally {
-            // Ensure the stream is awaited and cleaned up properly
-            await streamPromise;
-        }
+        );
     }
 
     async getCrawlRequestResults(itemId: string): Promise<{ results: CrawlResult[] }> {
@@ -148,14 +103,14 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
      * @throws Error if the sitemap is not available
      */
     private async getCrawlRequestForSitemap(crawlRequest: string | CrawlRequest): Promise<CrawlRequest> {
-        const request = typeof crawlRequest === 'string' 
-            ? await this.getCrawlRequest(crawlRequest) 
+        const request = typeof crawlRequest === 'string'
+            ? await this.getCrawlRequest(crawlRequest)
             : crawlRequest;
-        
+
         if (!request.sitemap) {
             throw new Error('Sitemap not found in crawl request');
         }
-        
+
         return request;
     }
 
@@ -166,11 +121,11 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
      */
     async downloadSitemap(crawlRequest: string | CrawlRequest): Promise<SitemapNode[]> {
         const request = await this.getCrawlRequestForSitemap(crawlRequest);
-        
+
         if (!request.sitemap) {
             throw new Error('Sitemap URL is missing or undefined');
         }
-        
+
         const response = await axios.get(request.sitemap);
         return response.data;
     }
@@ -237,23 +192,23 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
             search_options: searchOptions,
             result_limit: resultLimit
         };
-        
+
         const response = await this.post<SearchRequest>('/api/v1/core/search/', request);
-        
+
         if (!sync) {
             return response;
         }
-        
+
         // Monitor the search request until completion
         for await (const event of this.monitorSearchRequest(response.uuid, download)) {
-            if (event.type === 'state' && ['finished', 'failed'].includes(event.status)) {
+            if (event.type === 'state' && ['finished', 'failed'].includes(event.data.status)) {
                 if (download && Array.isArray(event.data.result)) {
                     return event.data.result as SearchResult[];
                 }
                 return event.data;
             }
         }
-        
+
         throw new Error('Search request failed or timed out');
     }
 
@@ -264,55 +219,10 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
      * @returns AsyncGenerator yielding search events
      */
     async *monitorSearchRequest(itemId: string, download: boolean = true): AsyncGenerator<SearchEvent, void, unknown> {
-        const events: SearchEvent[] = [];
-        let resolveNext: ((value: IteratorResult<SearchEvent, void>) => void) | null = null;
-        let isDone = false;
-        let streamError: Error | null = null;
-
-        const processEvent = (event: SearchEvent) => {
-            if (resolveNext) {
-                resolveNext({ value: event, done: false });
-                resolveNext = null;
-            } else {
-                events.push(event);
-            }
-        };
-
-        const streamPromise = this.streamEvents(
-            `/api/v1/core/search/${itemId}/status/`,
-            processEvent,
-            { params: { prefetched: download } }
-        ).catch((error) => {
-            streamError = error;
-            isDone = true;
-        }).finally(() => {
-            isDone = true;
-        });
-
-        try {
-            while (!isDone || events.length > 0) {
-                if (events.length > 0) {
-                    yield events.shift()!;
-                } else if (!isDone) {
-                    await new Promise<IteratorResult<SearchEvent, void>>((resolve) => {
-                        resolveNext = resolve;
-                    });
-                }
-            }
-    
-            // Check for any remaining events after the stream ends
-            while (events.length > 0) {
-                yield events.shift()!;
-            }
-    
-            // If the stream failed, propagate the error
-            if (streamError) {
-                throw streamError;
-            }
-        } finally {
-            // Ensure the stream is awaited and cleaned up properly
-            await streamPromise;
-        }
+        yield* this.fetchStream<SearchEvent>(
+          `/api/v1/core/search/${itemId}/status/`,
+          { params: { prefetched: download } }
+        );
     }
 
     /**

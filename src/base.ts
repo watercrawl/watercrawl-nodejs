@@ -4,9 +4,12 @@ import urlJoin from 'url-join';
 export class BaseAPIClient {
     protected client: AxiosInstance;
     protected baseUrl: string;
+    protected apiKey: string;
 
     constructor(apiKey: string, baseUrl: string = 'https://app.watercrawl.dev') {
+        this.apiKey = apiKey;
         this.baseUrl = baseUrl;
+
         this.client = axios.create({
             baseURL: this.baseUrl,
             headers: {
@@ -16,21 +19,19 @@ export class BaseAPIClient {
             }
         });
 
-        // Add response interceptor for error handling
         this.client.interceptors.response.use(
-            response => response,
-            error => {
-                if (error.response) {
-                    // Log API errors
-                    console.error('API Error:', {
-                        url: error.config.url,
-                        status: error.response.status,
-                        data: error.response.data,
-                        headers: error.response.headers
-                    });
-                }
-                throw error;
-            }
+          response => response,
+          error => {
+              if (error.response) {
+                  console.error('API Error:', {
+                      url: error.config.url,
+                      status: error.response.status,
+                      data: error.response.data,
+                      headers: error.response.headers
+                  });
+              }
+              throw error;
+          }
         );
     }
 
@@ -63,30 +64,54 @@ export class BaseAPIClient {
         return urlJoin(this.baseUrl, ...parts);
     }
 
-    protected async streamEvents(endpoint: string, onEvent: (event: any) => void, config: AxiosRequestConfig = {}): Promise<void> {
-        const response = await this.client.get(endpoint, {
-            responseType: 'stream',
-            ...config
-        });
-        let buffer = '';
 
-        const stream = response.data;
-        stream.on('data', (chunk: string) => {
-            buffer += chunk.toString();
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    try {
-                        const data = JSON.parse(line.slice(6));
-                        onEvent(data);
-                    } catch (error) {
-                        console.error('Error parsing event data:', line, error);
-                    }
-                }
+    /**
+     * Async generator that streams SSE data using fetch and yields parsed JSON
+     */
+    protected async *fetchStream<T>(endpoint: string, config: AxiosRequestConfig = {}): AsyncGenerator<T> {
+        const url = new URL(this.buildUrl(endpoint));
+        if(config.params) {
+            Object.keys(config.params).forEach(key => {
+                url.searchParams.append(key, config.params[key]);
+            })
+        }
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                // 'Accept': 'text/event-stream',
+                'X-API-KEY': this.apiKey
             }
         });
 
-        return response.data;
+        if (!response.body) {
+            throw new Error("No response body");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('data:')) {
+                    const dataStr = trimmed.slice(5).trim();
+                    if (dataStr === '[DONE]') return;
+                    try {
+                        yield JSON.parse(dataStr) as T;
+                    } catch (err) {
+                        console.error('Failed to parse JSON from stream:', dataStr, err);
+                    }
+                }
+            }
+        }
     }
 }
