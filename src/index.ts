@@ -178,6 +178,13 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
    * @deprecated
    */
   async downloadSitemap(crawlRequest: string | CrawlRequest): Promise<SitemapNode[]> {
+    process.emitWarning(
+      'The downloadSitemap method is deprecated and will be removed in a future version. Please use the getCrawlRequestSitemap method instead.',
+      {
+        code: 'DEP0001',
+        type: 'DeprecationWarning',
+      },
+    );
     return (await this.getCrawlRequestSitemap(crawlRequest, SitemapOutputFormat.Json)) as Promise<
       SitemapNode[]
     >;
@@ -190,6 +197,13 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
    * @deprecated
    */
   async downloadSitemapGraph(crawlRequest: string | CrawlRequest): Promise<object> {
+    process.emitWarning(
+      'The downloadSitemapGraph method is deprecated and will be removed in a future version. Please use the getCrawlRequestSitemap method instead.',
+      {
+        code: 'DEP0001',
+        type: 'DeprecationWarning',
+      },
+    );
     return (await this.getCrawlRequestSitemap(
       crawlRequest,
       SitemapOutputFormat.Graph,
@@ -203,6 +217,13 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
    * @deprecated
    */
   async downloadSitemapMarkdown(crawlRequest: string | CrawlRequest): Promise<string> {
+    process.emitWarning(
+      'The downloadSitemapMarkdown method is deprecated and will be removed in a future version. Please use the getCrawlRequestSitemap method instead.',
+      {
+        code: 'DEP0001',
+        type: 'DeprecationWarning',
+      },
+    );
     return (await this.getCrawlRequestSitemap(
       crawlRequest,
       SitemapOutputFormat.Markdown,

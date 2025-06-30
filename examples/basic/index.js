@@ -36,6 +36,37 @@ async function simpleCrawl() {
     }
 }
 
+async function downloadSitemapFromCrawl() {
+    console.log('\nDownloading sitemap from crawl');
+    try {
+        console.log('Scraping URL...');
+        let request = await api.createCrawlRequest('https://watercrawl.dev');
+
+        console.log('Scrap url created:', request.uuid);
+
+        console.log('Waiting for crawl to complete...');
+
+        for await (const event of api.monitorCrawlRequest(request.uuid)) {
+            console.log('Event:', event.type);
+            if (event.type === 'state') {
+                request = event.data;
+            }
+        }
+        console.log('Downloading sitemap...');
+        if (request.sitemap) {
+            const sitemap = await api.getCrawlRequestSitemap(request, 'json');
+            console.log('Sitemap JSON:', sitemap);
+            const sitemapMarkdown = await api.getCrawlRequestSitemap(request, 'markdown');
+            console.log('Sitemap Markdown:', sitemapMarkdown);
+            const sitemapGraph = await api.getCrawlRequestSitemap(request, 'graph');
+            console.log('Sitemap Graph:', sitemapGraph);
+        }else {
+            console.log('No sitemap found');
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
 // Example 2: Asynchronous crawl with monitoring
 async function monitoredCrawl() {
     console.log('\nExample 2: Asynchronous crawl with monitoring');
@@ -404,11 +435,12 @@ async function main() {
 
     // Uncomment the examples you want to run
     // await simpleCrawl();
+    await downloadSitemapFromCrawl();
     // await monitoredCrawl();
     // await manageCrawls();
     // await searchExample();
-    await batchCrawlExample();
-    await newSitemapExample();
+    // await batchCrawlExample();
+    // await newSitemapExample();
 
     console.log('\nAll examples completed!');
 }

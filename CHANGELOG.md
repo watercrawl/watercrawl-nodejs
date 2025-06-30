@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-06-30
+
+### Added
+- Batch crawl API support for processing multiple URLs in a single request
+- Comprehensive sitemap API with improved functionality:
+  - Dedicated methods for creating, retrieving, listing, and deleting sitemap requests
+  - Support for different output formats (JSON, Markdown, Graph) via `getSitemapResults`
+  - Real-time monitoring with event streaming via `monitorSitemapRequest`
+- New `getCrawlRequestSitemap` method to retrieve sitemap data from a crawl request with format options
+- Example code demonstrating batch crawl and sitemap API usage in the examples directory
+
+### Changed
+- Updated streaming implementation to use Axios streams instead of Fetch API for better Node.js compatibility
+- Improved test suite organization with clear categorization (Core API, Crawl API, Search API, Sitemap API)
+- Enhanced error handling in tests and async operations
+
+### Fixed
+- Fixed type issues with SitemapOptions and enum usage in tests
+- Improved test reliability for asynchronous streaming operations
+- Better handling of potentially long-running operations in examples
+
+### Deprecated
+- `downloadResult` - Use alternative methods for downloading result data
+- `downloadSitemap` - Use the new `getCrawlRequestSitemap` method with JSON format
+- `downloadSitemapGraph` - Use the new `getCrawlRequestSitemap` method with Graph format
+- `downloadSitemapMarkdown` - Use the new `getCrawlRequestSitemap` method with Markdown format
+
 ## [1.1.1] - 2025-05-03
 
 ### Fixed
