@@ -40,6 +40,14 @@ for await (const result of client.monitorCrawlRequest(crawlRequest.uuid)) {
         console.log(result.data);  // it is a result object per page
     }
 }
+
+// Batch crawling example
+const batchRequest = await client.createBatchCrawlRequest(
+    ['https://example.com', 'https://example.org'],
+    {}, // spider options
+    {}, // page options
+    {}  // plugin options
+);
 ```
 
 ## API Examples
@@ -107,45 +115,65 @@ const request = await client.createCrawlRequest(
 );
 ```
 
+#### Create a batch crawl request
+
+```typescript
+// Batch crawl multiple URLs at once
+const batchRequest = await client.createBatchCrawlRequest(
+    [
+        'https://example.com',
+        'https://example.org',
+        'https://another-site.com'
+    ],
+    {
+        max_depth: 1, // maximum depth to crawl
+        allowed_domains: [], // allowed domains to crawl
+    },
+    {
+        wait_time: 1000, // wait time in milliseconds after page load
+        include_html: true, // the result will include HTML
+    }
+);
+
+// The batch crawl request returns a standard CrawlRequest object
+console.log(`Batch crawl request created: ${batchRequest.uuid}`);
+
+// You can monitor batch crawls the same way as regular crawls
+for await (const event of client.monitorCrawlRequest(batchRequest.uuid)) {
+    if (event.type === 'state') {
+        console.log(`Status: ${event.data.status}, Documents: ${event.data.number_of_documents}`);
+    } else if (event.type === 'result') {
+        console.log(`New result for URL: ${event.data.url}`);
+    }
+}
+```
+
+#### Monitor a crawl request
+
+```typescript
+// Monitor and get notifications for different events
+for await (const event of client.monitorCrawlRequest('request-uuid')) {
+    if (event.type === 'state') {
+        // This is a state update event
+        console.log(`Status: ${event.data.status}`);
+        console.log(`Pages crawled: ${event.data.number_of_documents}`);
+    } else if (event.type === 'result') {
+        // This is a new result
+        console.log(`New page result: ${event.data.url}`);
+        // You can download the result data
+        const resultData = await client.downloadResult(event.data);
+        console.log(resultData);
+    }
+}
+```
+
 #### Stop a crawl request
 
 ```typescript
 await client.stopCrawlRequest('request-uuid');
 ```
 
-#### Download a crawl request result
-
-```typescript
-// Download the crawl request results
-const results = await client.downloadCrawlRequest('request-uuid');
-```
-
-#### Monitor a crawl request
-
-```typescript
-// Monitor with automatic result download (default)
-for await (const event of client.monitorCrawlRequest('request-uuid')) {
-    if (event.type === 'status') {
-        console.log(`Crawl state: ${event.data.status}`);
-    } else if (event.type === 'result') {
-        console.log(`Received result for: ${event.data.url}`);
-    }
-}
-
-// Monitor without downloading results
-for await (const event of client.monitorCrawlRequest('request-uuid', false)) {
-    console.log(`Event type: ${event.type}`);
-}
-```
-
-#### Get crawl request results
-
-```typescript
-// Get the results
-const results = await client.getCrawlRequestResults('request-uuid');
-```
-
-#### Quick URL scraping
+#### Scrape a single URL
 
 ```typescript
 // Synchronous scraping (default)
@@ -164,35 +192,69 @@ const request = await client.scrapeUrl('https://example.com', {}, {}, false);
 
 ### Sitemap Operations
 
-#### Download a sitemap
+#### Sitemap API methods
 
 ```typescript
-// Download using a crawl request object
-const crawlRequest = await client.getCrawlRequest('request-uuid');
-const sitemap = await client.downloadSitemap(crawlRequest);
+// Create a new sitemap request
+const sitemapRequest = await client.createSitemapRequest(
+    'https://example.com',
+    {
+        include_subdomains: true,
+        ignore_sitemap_xml: false,
+        search: null,
+        include_paths: [],
+        exclude_paths: ['/login/*', '/admin/*']
+    },
+    false, // async mode
+    false  // don't download results yet
+);
 
-// Or download using just the UUID
-const sitemap = await client.downloadSitemap('request-uuid');
+// Get an existing sitemap request
+const sitemap = await client.getSitemapRequest('sitemap-uuid');
 
-// Process sitemap entries
+// List all sitemap requests (with pagination)
+const sitemapList = await client.listSitemapRequests(1, 10); // page 1, 10 items per page
+
+// Monitor sitemap generation progress (async streaming)
+for await (const event of client.monitorSitemapRequest(sitemapRequest.uuid)) {
+    if (event.type === 'state') {
+        console.log(`Status: ${event.data.status}`);
+    } else if (event.type === 'feed') {
+        console.log(`Progress: ${event.data.message}`);
+    }
+}
+
+// Get sitemap results in different formats
+const jsonResults = await client.getSitemapResults(sitemapRequest.uuid); // default JSON format
+const markdownResults = await client.getSitemapResults(sitemapRequest.uuid, 'markdown');
+const graphResults = await client.getSitemapResults(sitemapRequest.uuid, 'graph');
+
+// Delete/cancel a sitemap request
+await client.deleteSitemapRequest(sitemapRequest.uuid);
+```
+
+#### Get sitemap from a crawl request
+
+```typescript
+// Get sitemap from a crawl request in JSON format (default)
+const sitemap = await client.getCrawlRequestSitemap('request-uuid');
+
+// Get sitemap as markdown
+const markdownSitemap = await client.getCrawlRequestSitemap('request-uuid', 'markdown');
+
+// Get sitemap as graph data
+const graphSitemap = await client.getCrawlRequestSitemap('request-uuid', 'graph');
+
+// Process JSON sitemap entries
 for (const entry of sitemap) {
     console.log(`URL: ${entry.url}, Title: ${entry.title}`);
 }
 ```
 
-#### Download sitemap as graph data
-
-```typescript
-// You need to provide crawl request uuid or crawl request object
-const graphData = await client.downloadSitemapGraph('request-uuid');
-```
-
-#### Download sitemap as markdown
-
-```typescript
-// You need to provide crawl request uuid or crawl request object
-const markdown = await client.downloadSitemapMarkdown('request-uuid');
-```
+> **Note**: The following methods are deprecated and will be removed in future versions:
+> - `downloadSitemap()` - use `getCrawlRequestSitemap()` instead
+> - `downloadSitemapGraph()` - use `getCrawlRequestSitemap(uuid, 'graph')` instead
+> - `downloadSitemapMarkdown()` - use `getCrawlRequestSitemap(uuid, 'markdown')` instead
 
 ### Search Operations
 
