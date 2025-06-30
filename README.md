@@ -126,8 +126,7 @@ const batchRequest = await client.createBatchCrawlRequest(
         'https://another-site.com'
     ],
     {
-        max_depth: 1, // maximum depth to crawl
-        allowed_domains: [], // allowed domains to crawl
+        proxy_server: null
     },
     {
         wait_time: 1000, // wait time in milliseconds after page load
