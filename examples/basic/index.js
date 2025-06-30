@@ -199,85 +199,217 @@ async function searchExample() {
     }
 }
 
-// Example 5: Sitemap functionality
-async function sitemapExample() {
-    console.log('\nExample 5: Sitemap functionality');
+// Example 5: Batch crawl requests
+async function batchCrawlExample() {
+    console.log('\nExample 5: Batch crawl requests');
     try {
-        // Find a crawl request with a sitemap
-        const { results } = await api.getCrawlRequestsList();
-        let crawlWithSitemap = null;
+        // Define URLs to crawl in batch
+        const urls = [
+            'https://watercrawl.dev',
+            'https://docs.watercrawl.dev',
+            'https://watercrawl.dev/pricing'
+        ];
 
-        for (const item of results) {
-            try {
-                const crawl = await api.getCrawlRequest(item.uuid);
-                if (crawl.sitemap) {
-                    crawlWithSitemap = crawl;
-                    console.log('Found crawl with sitemap:', {
-                        uuid: crawl.uuid,
-                        url: crawl.url
-                    });
-                    break;
-                }
-            } catch (error) {
-                console.log(`Error checking crawl request ${item.uuid}:`, error.message);
+        console.log(`Creating batch crawl request for ${urls.length} URLs...`);
+
+        // Create a batch crawl request
+        const batchRequest = await api.createBatchCrawlRequest(
+            urls,
+            {
+                max_depth: 1,
+                allowed_domains: ['watercrawl.dev']
+            },
+            {
+                wait_time: 1000,
+                include_html: true,
+                include_links: true
+            }
+        );
+
+        console.log('Batch crawl request created:', {
+            uuid: batchRequest.uuid,
+            status: batchRequest.status,
+            numberOfUrls: urls.length
+        });
+
+        // Monitor the batch crawl request (limited to a few events)
+        console.log('\nMonitoring batch crawl progress...');
+        let count = 0;
+        for await (const event of api.monitorCrawlRequest(batchRequest.uuid)) {
+            if (event.type === 'state') {
+                const { status, number_of_documents: docs } = event.data;
+                console.log(`Status: ${status.toUpperCase()}, Documents: ${docs}`);
+            } else if (event.type === 'result') {
+                console.log('New result for URL:', event.data.url);
+            }
+
+            count++;
+            if (count >= 5) {
+                console.log('Limiting monitoring to 5 events...');
+                break;
             }
         }
 
-        if (crawlWithSitemap) {
-            // Download sitemap
-            console.log('\nDownloading sitemap...');
-            const sitemap = await api.downloadSitemap(crawlWithSitemap.uuid);
-            console.log('Sitemap structure (first 3 nodes):', sitemap.slice(0, 3).map(node => ({
-                url: node.url,
-                title: node.title
-            })));
+        // Get results of the batch crawl
+        try {
+            const results = await api.getCrawlRequestResults(batchRequest.uuid);
+            console.log(`\nBatch crawl has ${results.results.length} results so far`);
 
-            // Download sitemap as graph
-            try {
-                console.log('\nDownloading sitemap graph...');
-                const graph = await api.downloadSitemapGraph(crawlWithSitemap.uuid);
-                console.log('Graph structure:', {
-                    nodes: graph.nodes?.length || 0,
-                    edges: graph.edges?.length || 0
+            // Show preview of the first result if available
+            if (results.results.length > 0) {
+                console.log('First result preview:', {
+                    url: results.results[0].url,
+                    title: results.results[0].title
                 });
-            } catch (error) {
-                console.log('Sitemap graph endpoint might not be supported yet:', error.message);
             }
-
-            // Download sitemap as markdown
-            try {
-                console.log('\nDownloading sitemap markdown...');
-                const markdown = await api.downloadSitemapMarkdown(crawlWithSitemap.uuid);
-                console.log('Markdown preview:', markdown.substring(0, 200) + '...');
-            } catch (error) {
-                console.log('Sitemap markdown endpoint might not be supported yet:', error.message);
-            }
-        } else {
-            console.log('No crawl with sitemap found. Creating a new crawl request...');
-            const request = await api.createCrawlRequest('https://watercrawl.dev', {
-                spider_options: {
-                    max_depth: 2,
-                    page_limit: 10
-                }
-            });
-            console.log('Created new crawl request. You can check for sitemap after it completes:', request.uuid);
+        } catch (error) {
+            console.log('Could not get results yet, batch crawl may still be in progress');
         }
     } catch (error) {
-        console.error('Error in sitemap example:', error.message);
+        console.error('Error in batch crawl example:', error.message);
+    }
+}
+
+// Example 6: New Sitemap API functionality
+async function newSitemapExample() {
+    console.log('\nExample 6: New Sitemap API functionality');
+    try {
+        // First, let's list existing sitemap requests
+        console.log('Listing existing sitemap requests...');
+        const sitemapList = await api.listSitemapRequests();
+        console.log(`Found ${sitemapList.results.length} sitemap requests`);
+
+        if (sitemapList.results.length > 0) {
+            console.log('Most recent sitemap request:', {
+                uuid: sitemapList.results[0].uuid,
+                url: sitemapList.results[0].url,
+                status: sitemapList.results[0].status
+            });
+        }
+
+        // Create a new sitemap request (async mode)
+        console.log('\nCreating new sitemap request...');
+        const sitemapOptions = {
+            include_subdomains: true,
+            ignore_sitemap_xml: false,
+            search: null,
+            include_paths: [],
+            exclude_paths: ['/login/*', '/admin/*']
+        };
+
+        const sitemapRequest = await api.createSitemapRequest(
+            'https://watercrawl.dev',
+            sitemapOptions,
+            false, // async mode
+            false  // don't download results yet
+        );
+
+        console.log('Sitemap request created:', {
+            uuid: sitemapRequest.uuid,
+            url: sitemapRequest.url,
+            status: sitemapRequest.status
+        });
+
+        // Monitor the sitemap request progress
+        console.log('\nMonitoring sitemap generation progress...');
+        let eventCount = 0;
+        for await (const event of api.monitorSitemapRequest(sitemapRequest.uuid)) {
+            if (event.type === 'state') {
+                console.log('Sitemap status update:', event.data.status);
+            } else if (event.type === 'feed') {
+                console.log('Sitemap feed update:', event.data.message);
+            }
+
+            eventCount++;
+            if (eventCount >= 5) {
+                console.log('Limiting monitoring to 5 events...');
+                break;
+            }
+        }
+
+        // Get sitemap request details
+        console.log('\nRetrieving sitemap request details...');
+        try {
+            const updatedRequest = await api.getSitemapRequest(sitemapRequest.uuid);
+            console.log('Sitemap request details:', {
+                uuid: updatedRequest.uuid,
+                url: updatedRequest.url,
+                status: updatedRequest.status,
+                created_at: updatedRequest.created_at
+            });
+        } catch (error) {
+            console.log('Error retrieving sitemap details:', error.message);
+        }
+
+        // Try getting sitemap results in different formats
+        // Note: This may fail if the sitemap is not yet complete
+        console.log('\nAttempting to get sitemap results...');
+
+        // Find a completed sitemap request to demonstrate results
+        const completedSitemap = sitemapList.results.find(
+            req => req.status === 'finished'
+        );
+
+        if (completedSitemap) {
+            console.log('Found completed sitemap to show results:', completedSitemap.uuid);
+
+            try {
+                // JSON format (default)
+                console.log('\nGetting sitemap results in JSON format...');
+                const jsonResults = await api.getSitemapResults(completedSitemap.uuid);
+                console.log('JSON results preview:',
+                    Array.isArray(jsonResults)
+                        ? `Array with ${jsonResults.length} items`
+                        : typeof jsonResults
+                );
+
+                // Markdown format
+                console.log('\nGetting sitemap results in Markdown format...');
+                const markdownResults = await api.getSitemapResults(
+                    completedSitemap.uuid,
+                    'markdown'
+                );
+                if (typeof markdownResults === 'string') {
+                    console.log('Markdown preview:',
+                        markdownResults.length > 100
+                            ? markdownResults.substring(0, 100) + '...'
+                            : markdownResults
+                    );
+                }
+
+                // Graph format
+                console.log('\nGetting sitemap results in Graph format...');
+                const graphResults = await api.getSitemapResults(
+                    completedSitemap.uuid,
+                    'graph'
+                );
+                if (typeof graphResults === 'object') {
+                    console.log('Graph structure:', graphResults);
+                }
+            } catch (error) {
+                console.log('Error getting sitemap results:', error.message);
+            }
+        } else {
+            console.log('No completed sitemap found to demonstrate results formats');
+        }
+
+    } catch (error) {
+        console.error('Error in new sitemap example:', error.message);
     }
 }
 
 // Run all examples
 async function main() {
     console.log('Running WaterCrawl examples...');
-    
+
     // Uncomment the examples you want to run
     // await simpleCrawl();
     // await monitoredCrawl();
     // await manageCrawls();
     // await searchExample();
-    await sitemapExample();
-    
+    await batchCrawlExample();
+    await newSitemapExample();
+
     console.log('\nAll examples completed!');
 }
 
