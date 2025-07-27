@@ -89,8 +89,12 @@ export class WaterCrawlAPIClient extends BaseAPIClient {
     });
   }
 
-  async getCrawlRequestResults(itemId: string): Promise<{ results: CrawlResult[] }> {
-    return this.get(`/api/v1/core/crawl-requests/${itemId}/results/`);
+  async getCrawlRequestResults(itemId: string, page?: number, pageSize?: number, download?: boolean): Promise<{ results: CrawlResult[] }> {
+    return this.get(`/api/v1/core/crawl-requests/${itemId}/results/`, {
+      page,
+      page_size: pageSize,
+      prefetched: download
+    });
   }
 
   /**

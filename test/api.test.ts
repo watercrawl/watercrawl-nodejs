@@ -87,6 +87,40 @@ describe('WaterCrawlAPI', () => {
       expect(Array.isArray(response.results)).toBe(true);
     }, 60000);
 
+    test('getCrawlRequestResults with pagination and download', async () => {
+      // Find a crawl request with results
+      const crawlList = await api.getCrawlRequestsList();
+      let targetCrawl: CrawlRequest | undefined;
+      for (const crawl of crawlList.results) {
+        const results = await api.getCrawlRequestResults(crawl.uuid);
+        if (results.results.length > 1) {
+          targetCrawl = crawl;
+          break;
+        }
+      }
+
+      if (!targetCrawl) {
+        console.log('Skipping pagination test: No suitable crawl with multiple results found.');
+        return;
+      }
+
+      // Test pagination
+      const pageSize = 1;
+      const paginatedResponse = await api.getCrawlRequestResults(targetCrawl.uuid, 1, pageSize);
+      expect(Array.isArray(paginatedResponse.results)).toBe(true);
+      expect(paginatedResponse.results.length).toBe(pageSize);
+
+      // Test download=true
+      const downloadResponse = await api.getCrawlRequestResults(targetCrawl.uuid, 1, pageSize, true);
+      expect(Array.isArray(downloadResponse.results)).toBe(true);
+      if (downloadResponse.results.length > 0) {
+        const result = downloadResponse.results[0];
+        // When downloaded, the result object should be more than just a URL string
+        expect(typeof result.result).toBe('object');
+        expect(result.result).not.toBeNull();
+      }
+    }, 60000);
+
     test('downloadResult downloads a specific result', async () => {
       const resultCrawl = await api.getCrawlRequestsList();
       let index = 0;
@@ -123,7 +157,7 @@ describe('WaterCrawlAPI', () => {
       const items = await api.getCrawlRequestsList();
       const completedItem = items.results.find(
         (item) =>
-          item.status === ('completed' as CrawlStatus) || item.status === ('finished' as CrawlStatus),
+          item.status === ('finished' as CrawlStatus),
       );
 
       if (completedItem) {
