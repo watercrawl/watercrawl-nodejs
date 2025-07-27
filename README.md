@@ -172,6 +172,30 @@ for await (const event of client.monitorCrawlRequest('request-uuid')) {
 await client.stopCrawlRequest('request-uuid');
 ```
 
+#### Get crawl request results
+
+Retrieves the results of a specific crawl request, with support for pagination and direct content downloading.
+
+```typescript
+// Get all results for a crawl request
+const { results } = await client.getCrawlRequestResults('request-uuid');
+
+// Get a specific page of results
+const paginatedResults = await client.getCrawlRequestResults('request-uuid', 2, 10); // page 2, 10 items per page
+
+// Get results with content downloaded
+const downloadedResults = await client.getCrawlRequestResults('request-uuid', 1, 5, true);
+
+// Process results
+for (const result of results) {
+    console.log(`URL: ${result.url}, Title: ${result.title}`);
+    if (downloadedResults) {
+        // result.result will contain the downloaded data object
+        console.log('Downloaded content:', result.result);
+    }
+}
+```
+
 #### Scrape a single URL
 
 ```typescript
